@@ -1,3 +1,10 @@
+import os
+import zipfile
+import glob
+import xml.etree.ElementTree as ET
+import pandas as pd
+import sys
+
 def parse_trade_nodes(node, level=0, path=""):
     data = []
     for trade_node in node.findall("{http://schemas.datacontract.org/2004/07/Buildsoft.PhoenixTakeOff.DataEntities.DataTransferObjects}TradeNode"):
@@ -11,10 +18,8 @@ def parse_trade_nodes(node, level=0, path=""):
 
         new_path = f"{path}/{code}" if path else code
 
-
         parent_quantity = None
         parent_unit = None
-
 
         # Process EstimatingComponents
         estimating_components = trade_node.find("{http://schemas.datacontract.org/2004/07/Buildsoft.PhoenixTakeOff.DataEntities.DataTransferObjects}EstimatingComponents")
@@ -52,7 +57,6 @@ def parse_trade_nodes(node, level=0, path=""):
             parent_unit = component_data.get('Unit')
             composite_rate_sheet = trade_node.find(".//{http://schemas.datacontract.org/2004/07/Buildsoft.PhoenixTakeOff.DataEntities.DataTransferObjects}CompositeRateSheet")
             if composite_rate_sheet is not None:
-                print(parent_quantity, new_path)
                 rate_items = parse_rate_items(composite_rate_sheet, new_path, 99, parent_quantity, parent_unit)
                 data.extend(rate_items)
 
@@ -150,7 +154,9 @@ def main(folder_path):
         df.to_excel(writer, sheet_name='Original Data', index=False)
         df_unpivoted.to_excel(writer, sheet_name='Unpivoted Data', index=False)
 
-
 if __name__ == "__main__":
-    folder_path = ''  # Change this to the actual path of your folder
+    if len(sys.argv) != 2:
+        print("Usage: python process_cbx.py <folder_path>")
+        sys.exit(1)
+    folder_path = sys.argv[1]
     main(folder_path)
